@@ -4,3 +4,4 @@ Source Code? This GSI based on ponces AOSP
 
 Thanks to:
 - TrebleDroid Builders Community
+- Wahid (Lend me a Server)
