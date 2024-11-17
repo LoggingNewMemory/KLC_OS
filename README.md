@@ -2,7 +2,7 @@
 
 ## Source Code? This GSI based on ponces Android 15 AOSP
 
-### Build
+## Build
 
 To get started with building AOSP GSI, you'll need to get familiar with [Git and Repo](https://source.android.com/docs/setup/reference/repo) as well as [How to build a GSI](https://github.com/phhusson/treble_experimentations/wiki/How-to-build-a-GSI%3F)
 
@@ -12,6 +12,8 @@ Note:
 - At least 200 Free storage (HDD or SSD)
 - There is a note (Notes.txt) That contains bootanim logo and default wallpaper path, and also system.img path. Hope it helps
 - Pay attention to the KLC_OS/treble_aosp/build.sh script. I also write something there
+
+### Steps
 
 1. Create a new working directory for your AOSP build and navigate to it: <br />
 `mkdir klc_os; cd klc_os`
