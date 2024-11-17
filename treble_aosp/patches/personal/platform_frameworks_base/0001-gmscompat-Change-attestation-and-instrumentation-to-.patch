@@ -1,0 +1,169 @@
+From 00b34966add1c1a4ccb43591625f6aa0c3e57441 Mon Sep 17 00:00:00 2001
+From: Alberto Ponces <ponces26@gmail.com>
+Date: Thu, 9 Nov 2023 12:33:55 +0100
+Subject: [PATCH 1/9] gmscompat: Change attestation and instrumentation to pass
+ SafetyNet and Play Integrity API.
+
+Original work by @kdrag0n.
+Updated by many people like @dereference23, @Stallix, @dyneteve, @neobuddy89 and @jhenrique09.
+Adapted by @iceows for his own AOSP A13 GSI.
+Adapted by @ponces based on the work of @chiteroman to pass newest Play Integrity API.
+---
+ core/java/android/app/Instrumentation.java    |  4 +
+ .../internal/gmscompat/AttestationHooks.java  | 93 +++++++++++++++++++
+ .../keystore2/AndroidKeyStoreSpi.java         |  3 +
+ 3 files changed, 100 insertions(+)
+ create mode 100644 core/java/com/android/internal/gmscompat/AttestationHooks.java
+
+diff --git a/core/java/android/app/Instrumentation.java b/core/java/android/app/Instrumentation.java
+index db216b1af974..9445bc1b581a 100644
+--- a/core/java/android/app/Instrumentation.java
++++ b/core/java/android/app/Instrumentation.java
+@@ -63,6 +63,8 @@ import android.view.WindowManagerGlobal;
+ 
+ import com.android.internal.content.ReferrerIntent;
+ 
++import com.android.internal.gmscompat.AttestationHooks;
++
+ import java.io.File;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
+@@ -1351,6 +1353,7 @@ public class Instrumentation {
+         Application app = getFactory(context.getPackageName())
+                 .instantiateApplication(cl, className);
+         app.attach(context);
++        AttestationHooks.initApplicationBeforeOnCreate(app);
+         return app;
+     }
+     
+@@ -1368,6 +1371,7 @@ public class Instrumentation {
+             ClassNotFoundException {
+         Application app = (Application)clazz.newInstance();
+         app.attach(context);
++        AttestationHooks.initApplicationBeforeOnCreate(app);
+         return app;
+     }
+ 
+diff --git a/core/java/com/android/internal/gmscompat/AttestationHooks.java b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+new file mode 100644
+index 000000000000..99e61ae74007
+--- /dev/null
++++ b/core/java/com/android/internal/gmscompat/AttestationHooks.java
+@@ -0,0 +1,93 @@
++/*
++ * Copyright (C) 2021 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.internal.gmscompat;
++
++import android.app.Application;
++import android.os.Build;
++import android.os.Build.VERSION;
++import android.os.SystemProperties;
++import android.util.Log;
++
++import java.lang.reflect.Field;
++import java.util.Arrays;
++
++/** @hide */
++public final class AttestationHooks {
++    private static final String TAG = "GmsCompat/Attestation";
++
++    private static final String PACKAGE_GMS = "com.google.android.gms";
++    private static final String PACKAGE_FINSKY = "com.android.vending";
++    private static final String PROCESS_UNSTABLE = "com.google.android.gms.unstable";
++
++    private static volatile boolean sIsGms = false;
++    private static volatile boolean sIsFinsky = false;
++
++    private AttestationHooks() { }
++
++    private static void setPropValue(String key, String value) {
++        try {
++            Log.i(TAG, "Spoofing " + key + " with value \"" + value + "\"");
++            Class clazz = Build.class;
++            if (key.startsWith("VERSION.")) {
++                clazz = Build.VERSION.class;
++                key = key.substring(8);
++            }
++            Field field = clazz.getDeclaredField(key);
++            field.setAccessible(true);
++            field.set(null, field.getType().equals(Integer.TYPE) ? Integer.parseInt(value) : value);
++            field.setAccessible(false);
++        } catch (Exception e) {
++            Log.e(TAG, "Failed to spoof " + key, e);
++        }
++    }
++
++    private static void spoofBuildGms() {
++        setPropValue("PRODUCT", "comet_beta");
++        setPropValue("DEVICE", "comet");
++        setPropValue("MANUFACTURER", "Google");
++        setPropValue("BRAND", "google");
++        setPropValue("MODEL", "Pixel 9 Pro Fold");
++        setPropValue("FINGERPRINT", "google/comet_beta/comet:15/AP41.240925.009/12534705:user/release-keys");
++        setPropValue("VERSION.SECURITY_PATCH", "2024-10-05");
++        setPropValue("VERSION.DEVICE_INITIAL_SDK_INT", "32");
++    }
++
++    public static void initApplicationBeforeOnCreate(Application app) {
++        if (PACKAGE_GMS.equals(app.getPackageName()) &&
++                PROCESS_UNSTABLE.equals(Application.getProcessName())) {
++            sIsGms = true;
++            spoofBuildGms();
++        }
++
++        if (PACKAGE_FINSKY.equals(app.getPackageName())) {
++            sIsFinsky = true;
++        }
++    }
++
++    private static boolean isCallerSafetyNet() {
++        return sIsGms && Arrays.stream(Thread.currentThread().getStackTrace())
++                .anyMatch(elem -> elem.getClassName().toLowerCase()
++                    .contains("droidguard"));
++    }
++
++    public static void onEngineGetCertificateChain() {
++        if (isCallerSafetyNet() || sIsFinsky) {
++            Log.i(TAG, "Blocked key attestation");
++            throw new UnsupportedOperationException();
++        }
++    }
++}
+diff --git a/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java b/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java
+index e6a63b9c4c17..6a80c14c9837 100644
+--- a/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java
++++ b/keystore/java/android/security/keystore2/AndroidKeyStoreSpi.java
+@@ -48,6 +48,7 @@ import android.system.keystore2.ResponseCode;
+ import android.util.Log;
+ 
+ import com.android.internal.annotations.VisibleForTesting;
++import com.android.internal.gmscompat.AttestationHooks;
+ 
+ import java.io.ByteArrayInputStream;
+ import java.io.IOException;
+@@ -178,6 +179,8 @@ public class AndroidKeyStoreSpi extends KeyStoreSpi {
+ 
+     @Override
+     public Certificate[] engineGetCertificateChain(String alias) {
++        AttestationHooks.onEngineGetCertificateChain();
++
+         KeyEntryResponse response = getKeyMetadata(alias);
+ 
+         if (response == null || response.metadata.certificate == null) {
+-- 
+2.34.1
+
