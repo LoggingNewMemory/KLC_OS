@@ -13,7 +13,7 @@ echo
 
 set -e
 
-BL=$PWD/klc_os/treble_aosp
+BL=$PWD/KLC_OS/treble_aosp
 BD=$HOME/builds
 BV=$1
 
