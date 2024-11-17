@@ -12,6 +12,7 @@ Note:
 - At least 200 Free storage (HDD or SSD)
 - There is a note (Notes.txt) That contains bootanim logo and default wallpaper path, and also system.img path. Hope it helps
 - Pay attention to the KLC_OS/treble_aosp/build.sh script. I also write something there
+- All KLC OS Files are inside KLCStuffs folder
 
 ### Steps
 

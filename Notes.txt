@@ -13,3 +13,5 @@ wait until the script ends (Do not CTRL + C it) type this
 repo sync -j1 --fail-fast
 
 (Okay, actually you can modify it to -j4 or anything as long it works)
+
+All KLC OS Files are inside KLCStuffs folder
