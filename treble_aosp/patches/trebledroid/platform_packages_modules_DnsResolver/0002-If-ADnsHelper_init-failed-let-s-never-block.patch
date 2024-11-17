@@ -1,0 +1,24 @@
+From 436c50ad21aaee282ea306072b002a43942004c5 Mon Sep 17 00:00:00 2001
+From: Pierre-Hugues Husson <phh@phh.me>
+Date: Fri, 18 Oct 2024 17:35:01 -0400
+Subject: [PATCH 2/2] If ADnsHelper_init failed, let's never block
+
+---
+ DnsProxyListener.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/DnsProxyListener.cpp b/DnsProxyListener.cpp
+index 3d260966..b881a68e 100644
+--- a/DnsProxyListener.cpp
++++ b/DnsProxyListener.cpp
+@@ -691,6 +691,7 @@ IsUidBlockedFn resolveIsUidNetworkingBlockedFn() {
+     const int ret = (*ADnsHelper_init)();
+     if (ret) {
+         LOG(ERROR) << __func__ << ": ADnsHelper_init failed " << strerror(-ret);
++        return nullptr;
+     }
+ 
+     IsUidBlockedFn f =
+-- 
+2.34.1
+

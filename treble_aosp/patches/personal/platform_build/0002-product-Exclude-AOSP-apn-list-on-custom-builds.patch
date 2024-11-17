@@ -1,0 +1,39 @@
+From e38da8c1aa80ac5ec327cb6fa3aba867caa11871 Mon Sep 17 00:00:00 2001
+From: Alberto Ponces <ponces26@gmail.com>
+Date: Tue, 26 Dec 2023 17:01:46 +0000
+Subject: [PATCH 2/2] product: Exclude AOSP apn list on custom builds
+
+Change-Id: I76c8d5ef67de73d4558d350a87a9bc317aaad792
+---
+ target/product/aosp_product.mk        | 5 -----
+ target/product/full_base_telephony.mk | 1 -
+ 2 files changed, 6 deletions(-)
+
+diff --git a/target/product/aosp_product.mk b/target/product/aosp_product.mk
+index 3a5b622f99..26070b7f2b 100644
+--- a/target/product/aosp_product.mk
++++ b/target/product/aosp_product.mk
+@@ -34,8 +34,3 @@ PRODUCT_PACKAGES += \
+     PhotoTable \
+     preinstalled-packages-platform-aosp-product.xml \
+     ThemePicker \
+-
+-# Telephony:
+-#   Provide a APN configuration to GSI product
+-PRODUCT_COPY_FILES += \
+-    device/sample/etc/apns-full-conf.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/apns-conf.xml
+diff --git a/target/product/full_base_telephony.mk b/target/product/full_base_telephony.mk
+index d8a54cd7f3..5470ad2be5 100644
+--- a/target/product/full_base_telephony.mk
++++ b/target/product/full_base_telephony.mk
+@@ -24,7 +24,6 @@ PRODUCT_VENDOR_PROPERTIES := \
+     ro.com.android.dataroaming?=true
+ 
+ PRODUCT_COPY_FILES := \
+-    device/sample/etc/apns-full-conf.xml:system/etc/apns-conf.xml \
+     frameworks/native/data/etc/handheld_core_hardware.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/handheld_core_hardware.xml
+ 
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
+-- 
+2.34.1
+
