@@ -1,11 +1,11 @@
 Boot anim:
-aosp15/frameworks/base/core/res/assets/images/android-logo-mask.png
+/frameworks/base/core/res/assets/images/android-logo-mask.png
 
 Default Wallpaper:
-aosp15/vendor/ponces/rro_overlays/GsiFrameworksOverlay/res/drawable-nodpi/default_wallpaper.jpg
+/vendor/ponces/rro_overlays/GsiFrameworksOverlay/res/drawable-nodpi/default_wallpaper.jpg
 
 System.img located at:
-aosp15/out/target/product/tdgsi_arm64_ab/obj/PACKAGING/system_intermediates/system.img
+/out/target/product/tdgsi_arm64_ab/obj/PACKAGING/system_intermediates/system.img
 
 Got error while sync repo?
 wait until the script ends (Do not CTRL + C it) type this
