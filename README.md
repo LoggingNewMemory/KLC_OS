@@ -11,6 +11,7 @@ Note:
 - You need at least 30 GB of RAM to build this
 - At least 200 Free storage (HDD or SSD)
 - There is a note (Notes.txt) That contains bootanim logo and default wallpaper path, and also system.img path. Hope it helps
+- Pay attention to the KLC_OS/treble_aosp/build.sh script. I also write something there
 
 1. Create a new working directory for your AOSP build and navigate to it: <br />
 `mkdir klc_os; cd klc_os`
@@ -19,7 +20,7 @@ Note:
 `git clone https://github.com/LoggingNewMemory/KLC_OS -b android15.0`
 
 3. Start the build, Good luck. <br /> 
-`bash treble_aosp/build.sh`
+`bash KLC_OS/treble_aosp/build.sh`
 
 Thanks to:
 - [ponces](https://github.com/ponces)
