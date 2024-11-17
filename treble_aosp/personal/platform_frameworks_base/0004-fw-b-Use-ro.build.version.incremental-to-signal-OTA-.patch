@@ -1,0 +1,150 @@
+From 9ec40c0eea7874d00ce0946f18b77da5c4e0c94d Mon Sep 17 00:00:00 2001
+From: dhacker29 <dhackerdvm@gmail.com>
+Date: Tue, 24 Nov 2015 01:53:47 -0500
+Subject: [PATCH 4/9] fw/b: Use ro.build.version.incremental to signal OTA
+ upgrades
+
+Co-authored-by: maxwen <max.weninger@gmail.com>
+Co-authored-by: Sam Mortimer <sam@mortimer.me.uk>
+Co-authored-by: Wang Han <416810799@qq.com>
+Change-Id: If0eb969ba509981f9209ffa37a949d9042ef4c2a
+---
+ core/java/android/app/admin/SystemUpdateInfo.java            | 4 ++--
+ core/java/android/content/pm/PackagePartitions.java          | 2 +-
+ .../java/com/android/server/appwidget/AppWidgetXmlUtil.java  | 4 ++--
+ .../java/com/android/server/pm/PackageManagerService.java    | 5 +++--
+ .../com/android/server/pm/PackageManagerServiceUtils.java    | 3 +--
+ services/core/java/com/android/server/pm/Settings.java       | 2 +-
+ .../core/java/com/android/server/pm/ShortcutService.java     | 2 +-
+ 7 files changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/core/java/android/app/admin/SystemUpdateInfo.java b/core/java/android/app/admin/SystemUpdateInfo.java
+index 9e6c91f4ec31..7459b0e05e3a 100644
+--- a/core/java/android/app/admin/SystemUpdateInfo.java
++++ b/core/java/android/app/admin/SystemUpdateInfo.java
+@@ -133,7 +133,7 @@ public final class SystemUpdateInfo implements Parcelable {
+         out.startTag(null, tag);
+         out.attributeLong(null, ATTR_RECEIVED_TIME, mReceivedTime);
+         out.attributeInt(null, ATTR_SECURITY_PATCH_STATE, mSecurityPatchState);
+-        out.attribute(null, ATTR_ORIGINAL_BUILD , Build.FINGERPRINT);
++        out.attribute(null, ATTR_ORIGINAL_BUILD , Build.VERSION.INCREMENTAL);
+         out.endTag(null, tag);
+     }
+ 
+@@ -142,7 +142,7 @@ public final class SystemUpdateInfo implements Parcelable {
+     public static SystemUpdateInfo readFromXml(TypedXmlPullParser parser) {
+         // If an OTA has been applied (build fingerprint has changed), discard stale info.
+         final String buildFingerprint = parser.getAttributeValue(null, ATTR_ORIGINAL_BUILD );
+-        if (!Build.FINGERPRINT.equals(buildFingerprint)) {
++        if (!Build.VERSION.INCREMENTAL.equals(buildFingerprint)) {
+             return null;
+         }
+         try {
+diff --git a/core/java/android/content/pm/PackagePartitions.java b/core/java/android/content/pm/PackagePartitions.java
+index ff80e614be58..da3b68ecf789 100644
+--- a/core/java/android/content/pm/PackagePartitions.java
++++ b/core/java/android/content/pm/PackagePartitions.java
+@@ -131,7 +131,7 @@ public class PackagePartitions {
+             final String partitionName = SYSTEM_PARTITIONS.get(i).getName();
+             digestProperties[i] = "ro." + partitionName + ".build.fingerprint";
+         }
+-        digestProperties[SYSTEM_PARTITIONS.size()] = "ro.build.fingerprint"; // build fingerprint
++        digestProperties[SYSTEM_PARTITIONS.size()] = "ro.build.version.incremental";
+         return SystemProperties.digestOf(digestProperties);
+     }
+ 
+diff --git a/services/appwidget/java/com/android/server/appwidget/AppWidgetXmlUtil.java b/services/appwidget/java/com/android/server/appwidget/AppWidgetXmlUtil.java
+index d781cd8d58d8..c1b2c5824b51 100644
+--- a/services/appwidget/java/com/android/server/appwidget/AppWidgetXmlUtil.java
++++ b/services/appwidget/java/com/android/server/appwidget/AppWidgetXmlUtil.java
+@@ -100,7 +100,7 @@ public class AppWidgetXmlUtil {
+         out.attributeInt(null, ATTR_WIDGET_FEATURES, info.widgetFeatures);
+         out.attributeInt(null, ATTR_DESCRIPTION_RES, info.descriptionRes);
+         out.attributeBoolean(null, ATTR_PROVIDER_INHERITANCE, info.isExtendedFromAppWidgetProvider);
+-        out.attribute(null, ATTR_OS_FINGERPRINT, Build.FINGERPRINT);
++        out.attribute(null, ATTR_OS_FINGERPRINT, Build.VERSION.INCREMENTAL);
+     }
+ 
+     /**
+@@ -111,7 +111,7 @@ public class AppWidgetXmlUtil {
+             @NonNull final TypedXmlPullParser parser) {
+         Objects.requireNonNull(parser);
+         final String fingerprint = parser.getAttributeValue(null, ATTR_OS_FINGERPRINT);
+-        if (!Build.FINGERPRINT.equals(fingerprint)) {
++        if (!Build.VERSION.INCREMENTAL.equals(fingerprint)) {
+             return null;
+         }
+         final AppWidgetProviderInfo info = new AppWidgetProviderInfo();
+diff --git a/services/core/java/com/android/server/pm/PackageManagerService.java b/services/core/java/com/android/server/pm/PackageManagerService.java
+index c0b8034b9a56..dd7d5cea82a8 100644
+--- a/services/core/java/com/android/server/pm/PackageManagerService.java
++++ b/services/core/java/com/android/server/pm/PackageManagerService.java
+@@ -2229,7 +2229,8 @@ public class PackageManagerService implements PackageSender, TestUtilityService
+             if (mIsUpgrade) {
+                 PackageManagerServiceUtils.logCriticalInfo(Log.INFO,
+                         "Upgrading from " + ver.fingerprint + " (" + ver.buildFingerprint + ") to "
+-                                + PackagePartitions.FINGERPRINT + " (" + Build.FINGERPRINT + ")");
++                                + PackagePartitions.FINGERPRINT
++                                + " (" + Build.VERSION.INCREMENTAL + ")");
+             }
+             mPriorSdkVersion = mIsUpgrade ? ver.sdkVersion : -1;
+             mInitAppsHelper = new InitAppsHelper(this, mApexManager, mInstallPackageHelper,
+@@ -2387,7 +2388,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService
+                                         | Installer.FLAG_CLEAR_APP_DATA_KEEP_ART_PROFILES);
+                     }
+                 }
+-                ver.buildFingerprint = Build.FINGERPRINT;
++                ver.buildFingerprint = Build.VERSION.INCREMENTAL;
+                 ver.fingerprint = PackagePartitions.FINGERPRINT;
+             }
+ 
+diff --git a/services/core/java/com/android/server/pm/PackageManagerServiceUtils.java b/services/core/java/com/android/server/pm/PackageManagerServiceUtils.java
+index ff8abf879487..0babd99a511b 100644
+--- a/services/core/java/com/android/server/pm/PackageManagerServiceUtils.java
++++ b/services/core/java/com/android/server/pm/PackageManagerServiceUtils.java
+@@ -1399,8 +1399,6 @@ public class PackageManagerServiceUtils {
+         // that starts with "eng." to signify that this is an engineering build and not
+         // destined for release.
+         if (isUserDebugBuild && incrementalVersion.startsWith("eng.")) {
+-            Slog.w(TAG, "Wiping cache directory because the system partition changed.");
+-
+             // Heuristic: If the /system directory has been modified recently due to an "adb sync"
+             // or a regular make, then blow away the cache. Note that mtimes are *NOT* reliable
+             // in general and should not be used for production changes. In this specific case,
+@@ -1408,6 +1406,7 @@ public class PackageManagerServiceUtils {
+             File frameworkDir =
+                     new File(Environment.getRootDirectory(), "framework");
+             if (cacheDir.lastModified() < frameworkDir.lastModified()) {
++                Slog.w(TAG, "Wiping cache directory because the system partition changed.");
+                 FileUtils.deleteContents(cacheBaseDir);
+                 cacheDir = FileUtils.createDir(cacheBaseDir, cacheName);
+             }
+diff --git a/services/core/java/com/android/server/pm/Settings.java b/services/core/java/com/android/server/pm/Settings.java
+index 39565526f33e..d410f237fd07 100644
+--- a/services/core/java/com/android/server/pm/Settings.java
++++ b/services/core/java/com/android/server/pm/Settings.java
+@@ -484,7 +484,7 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
+         public void forceCurrent() {
+             sdkVersion = Build.VERSION.SDK_INT;
+             databaseVersion = CURRENT_DATABASE_VERSION;
+-            buildFingerprint = Build.FINGERPRINT;
++            buildFingerprint = Build.VERSION.INCREMENTAL;
+             fingerprint = PackagePartitions.FINGERPRINT;
+         }
+     }
+diff --git a/services/core/java/com/android/server/pm/ShortcutService.java b/services/core/java/com/android/server/pm/ShortcutService.java
+index 1cd77ffcedaa..b918cfa56f40 100644
+--- a/services/core/java/com/android/server/pm/ShortcutService.java
++++ b/services/core/java/com/android/server/pm/ShortcutService.java
+@@ -5248,7 +5248,7 @@ public class ShortcutService extends IShortcutService.Stub {
+ 
+     // Injection point.
+     String injectBuildFingerprint() {
+-        return Build.FINGERPRINT;
++        return Build.VERSION.INCREMENTAL;
+     }
+ 
+     final void wtf(String message) {
+-- 
+2.34.1
+
