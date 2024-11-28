@@ -1,6 +1,7 @@
 ![KLC OS Banner](https://github.com/user-attachments/assets/eabf88ec-474a-4e63-99cf-20daafc52f77)
 
 ## ソースコードですか? この GSI は Ponces Android 15 AOSP に基づいています
+[English](./README.md)
 
 ## ビルド
 
