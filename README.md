@@ -1,6 +1,7 @@
 ![KLC OS Banner](https://github.com/user-attachments/assets/eabf88ec-474a-4e63-99cf-20daafc52f77)
 
 ## Source Code? This GSI based on ponces Android 15 AOSP
+[日本語](./README_JP.md)
 
 ## Build
 
@@ -11,7 +12,7 @@ Note:
 - You need at least 30 GB of RAM to build this
 - At least 200 Free storage (HDD or SSD)
 - There is a note (Notes.txt) That contains bootanim logo and default wallpaper path, and also system.img path. Hope it helps
-- Pay attention to the KLC_OS/treble_aosp/build.sh script. I also write something there
+- Pay attention to the `KLC_OS/treble_aosp/build.sh` script. I also write something there
 - All KLC OS Files are inside KLCStuffs folder
 
 ### Steps
